@@ -2,57 +2,40 @@
 
 ## Current State
 
-The marketplace currently has:
-- Artist signup flow via separate dedicated page (`/artist-signup`)
-- Artist profile page showing items they've created (`/profile`)
-- Users must navigate to `/artist-signup` to become an artist
-- Artist data includes: name and Stripe account ID
-- Backend has `createArtist` and `updateArtist` functions
-- No centralized profile settings page
+The Artisan Hub marketplace allows artists to:
+- Sign up with a name and Stripe account ID
+- Create artist profiles via the Settings page
+- Upload and list items for sale with multiple files
+- Configure Stripe payment settings in their profile
+
+Currently, users can attempt to create items whether or not they have set up their artist profile with Stripe payment details.
 
 ## Requested Changes (Diff)
 
 ### Add
-- New Profile Settings page (`/settings`) accessible to logged-in users
-- Artist profile creation form within settings (replaces standalone signup page)
-- Stripe payment configuration UI within settings
-- Artist profile editing capability within settings
-- Visual indication of artist status (whether user is an artist or not)
-- Navigation link to settings page in header
+- Validation in the Create Item page to check if the user has an artist profile before allowing item creation
+- Alert/redirect flow to guide users without artist profiles to complete their settings first
 
 ### Modify
-- Artist creation workflow: move from standalone `/artist-signup` page to `/settings` page
-- Header navigation: add Settings link for logged-in users
-- Profile page: add link to settings for profile configuration
+- `CreateItemPage.tsx`: Add artist profile check and redirect/block logic for users without configured Stripe accounts
+- User flow: Users attempting to create items without artist profiles should be informed they must complete their profile first
 
 ### Remove
-- Standalone `/artist-signup` page route (functionality moved to settings)
+- None
 
 ## Implementation Plan
 
-1. **Backend**: No backend changes required. Existing `createArtist`, `updateArtist`, and `getArtist` functions will be reused.
+1. **Frontend Update (CreateItemPage.tsx)**
+   - Add `useGetArtist` query to check if the logged-in user has an artist profile
+   - Display a message if no artist profile exists, with a CTA button directing to Settings
+   - Only show the item creation form if the artist profile exists
 
-2. **Frontend**:
-   - Create new `SettingsPage.tsx` component with tabs/sections for:
-     - Artist profile creation (if not an artist yet)
-     - Artist profile editing (name, Stripe account ID)
-   - Add route for `/settings` in App.tsx
-   - Update Header.tsx to include Settings navigation link for logged-in users
-   - Update ArtistProfilePage.tsx to add a link to settings
-   - Remove ArtistSignupPage route from App.tsx (keep file for reference but remove from routing)
-
-3. **Key Features**:
-   - Check if user is already an artist (query `getArtist` with caller principal)
-   - If not an artist: show "Become an Artist" form with name and Stripe fields
-   - If already an artist: show "Edit Artist Profile" form pre-filled with current data
-   - Terms and conditions checkbox still required for new artist creation
-   - Success toast and navigation to profile after artist creation/update
+2. **Backend** (no changes required)
+   - The existing `createItem` function already checks if the artist exists before allowing item creation
+   - No additional backend logic needed
 
 ## UX Notes
 
-- Settings page should be clean and organized with clear sections
-- If user is not yet an artist, prominently display "Become an Artist" section
-- If user is already an artist, show current profile info with edit capability
-- Include helpful text about Stripe Connect account setup
-- Maintain existing terms and conditions dialog functionality
-- Add clear navigation between settings, profile, and marketplace
+- Users without artist profiles will see a friendly message explaining they need to set up their artist account first
+- A clear call-to-action button will direct them to the Settings page
+- This prevents confusion when users try to create items without payment capabilities configured

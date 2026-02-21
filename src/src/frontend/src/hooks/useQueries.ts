@@ -139,6 +139,29 @@ export function useGetArtist(artistId: Principal | null) {
       return actor.getArtist(artistId);
     },
     enabled: !!actor && !actorFetching && !!artistId,
+    retry: false,
+  });
+}
+
+export function useGetCurrentArtist(userPrincipal: Principal | null) {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<Artist | null>({
+    queryKey: ['currentArtist', userPrincipal?.toString()],
+    queryFn: async () => {
+      if (!actor || !userPrincipal) throw new Error('Actor or principal not available');
+      try {
+        return await actor.getArtist(userPrincipal);
+      } catch (error: any) {
+        // If artist doesn't exist, return null instead of throwing
+        if (error.message?.includes('not found') || error.message?.includes('Artist not found')) {
+          return null;
+        }
+        throw error;
+      }
+    },
+    enabled: !!actor && !actorFetching && !!userPrincipal,
+    retry: false,
   });
 }
 

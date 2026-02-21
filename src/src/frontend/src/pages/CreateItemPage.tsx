@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
-import { useCreateItem } from '../hooks/useQueries';
+import { useCreateItem, useGetCurrentArtist } from '../hooks/useQueries';
 import { ItemCategory } from '../backend';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Upload, X, Loader2 } from 'lucide-react';
+import { Upload, X, Loader2, Settings, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { ExternalBlob } from '../backend';
 
@@ -23,6 +23,9 @@ export default function CreateItemPage() {
   const { identity } = useInternetIdentity();
   const navigate = useNavigate();
   const createItem = useCreateItem();
+  
+  const userPrincipal = identity ? identity.getPrincipal() : null;
+  const { data: currentArtist, isLoading: isLoadingArtist } = useGetCurrentArtist(userPrincipal);
 
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<ItemCategory | ''>('');
@@ -39,6 +42,65 @@ export default function CreateItemPage() {
           Please login to create and sell items
         </p>
         <Button onClick={() => navigate({ to: '/' })}>Go to Marketplace</Button>
+      </div>
+    );
+  }
+
+  // Check if artist profile exists
+  if (isLoadingArtist) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-muted-foreground">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentArtist) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="max-w-2xl mx-auto">
+            <Card className="border-2">
+              <CardHeader className="text-center space-y-4 pb-8">
+                <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <AlertCircle className="h-8 w-8 text-primary" />
+                </div>
+                <CardTitle className="text-2xl">Artist Profile Required</CardTitle>
+                <CardDescription className="text-base">
+                  Before you can list items for sale, you need to set up your artist profile
+                  with payment settings.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-muted rounded-lg p-4 space-y-2">
+                  <h3 className="font-semibold text-sm">What you'll need:</h3>
+                  <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                    <li>Your artist name</li>
+                    <li>Stripe account ID for receiving payments</li>
+                  </ul>
+                </div>
+                <Button
+                  onClick={() => navigate({ to: '/settings' })}
+                  className="w-full"
+                  size="lg"
+                >
+                  <Settings className="mr-2 h-5 w-5" />
+                  Set Up Artist Profile
+                </Button>
+                <Button
+                  onClick={() => navigate({ to: '/' })}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Back to Marketplace
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     );
   }
